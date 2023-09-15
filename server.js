@@ -12,7 +12,7 @@ app.post("/process", (req, res) => {
   const inputData = req.body;
 
   // Replace 'python3' with 'python' if needed, depending on your Python version
-  const pythonProcess = spawn("python", [
+  const pythonProcess = spawn("python3", [
     "ai_processing.py",
     JSON.stringify(inputData),
   ]);
