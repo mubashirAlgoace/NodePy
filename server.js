@@ -1,43 +1,38 @@
-// Code for testing node + python
 const express = require("express");
-const { spawn } = require("child_process");
+const axios = require("axios");
 const app = express();
 const port = 3000;
+const cors = require("cors");
 
 app.use(express.json());
+app.use(cors());
+// Define a route to send JSON data to Colab
+app.post("/send-to-colab", async (req, res) => {
+  try {
+    const json_data = req.body;
 
-// Route to trigger the AI processing in Python
-app.post("/process", (req, res) => {
-  // Input data to send to the Python script
-  const inputData = req.body;
+    // URL of your Colab notebook
+    const colabNotebookUrl =
+      "https://colab.research.google.com/drive/1q5gpQiZf7507L2AJhewkcwO6B3whyBPP?usp=sharing"; // Replace with your Colab notebook URL
 
-  // Replace 'python3' with 'python' if needed, depending on your Python version
-  const pythonProcess = spawn("python3", [
-    "ai_processing.py",
-    JSON.stringify(inputData),
-  ]);
+    // Send a POST request to Colab
+    const colabResponse = await axios.post(colabNotebookUrl, {
+      code: json_data,
+    });
 
-  pythonProcess.stdout.on("data", (data) => {
-    // Process the data returned by the Python script (assuming it's JSON)
-    const result = JSON.parse(data);
-    res.json({ result });
-  });
+    // Process the response from Colab (assuming Colab returns JSON)
+    const processed_data = colabResponse.data;
 
-  pythonProcess.stderr.on("data", (data) => {
-    console.error(`Error from Python script: ${data}`);
-    res.status(500).json({ error: "An error occurred in the Python script." });
-  });
-
-  pythonProcess.on("close", (code) => {
-    if (code !== 0) {
-      console.error(`Python script exited with code ${code}`);
-      res
-        .status(500)
-        .json({ error: "An error occurred in the Python script." });
-    }
-  });
+    // Send the processed data back to the client (Node.js server)
+    res.json({ processed_data });
+  } catch (error) {
+    console.error("Error sending data to Colab:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while sending data to Colab." });
+  }
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Node.js server is running on port ${port}`);
 });
